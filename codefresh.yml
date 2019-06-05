@@ -35,6 +35,7 @@ steps:
     image: hseeberger/scala-sbt:8u181_2.12.8_1.2.8
     working_directory: ${{main_clone}}
     commands:
+    - rm -f target/scala-2.11/*.jar
     - sbt -ivy /codefresh/volume/.ivy2 assembly
 
   upload_jar:
@@ -51,4 +52,4 @@ steps:
       fi
     - |-
       ghr -t ${{GITHUB_TOKEN}} -u ${{CF_REPO_OWNER}} -r ${{CF_REPO_NAME}} \
-          -c ${{CF_REVISION}} -replace ${TAG_NAME} target/scala-2.11/zeppelin-jar-loader-v0.1.0.jar
+          -c ${{CF_REVISION}} -replace ${TAG_NAME} target/scala-2.11/zeppelin-jar-loader-*.jar
