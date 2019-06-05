@@ -1,0 +1,30 @@
+version: '1.0'
+stages:
+- clone
+- test
+- build
+
+steps:
+  main_clone:
+    title: Clone main repository
+    type: git-clone
+    stage: clone
+    git: github
+    repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+    revision: ${{CF_REVISION}}
+
+  test:
+    title: Run unit tests
+    stage: test
+    image: hseeberger/scala-sbt:8u181_2.12.8_1.2.8
+    working_directory: ${{main_clone}}
+    commands:
+    - sbt -ivy /codefresh/volume/.ivy2 test
+
+  build_jar:
+    title: Build 
+    stage: build
+    image: hseeberger/scala-sbt:8u181_2.12.8_1.2.8
+    working_directory: ${{main_clone}}
+    commands:
+    - sbt -ivy /codefresh/volume/.ivy2 assembly
