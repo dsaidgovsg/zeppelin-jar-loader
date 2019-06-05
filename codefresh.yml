@@ -1,0 +1,55 @@
+version: '1.0'
+stages:
+- clone
+- test
+- build
+- release
+
+steps:
+  get_github_token:
+    title: Get default GitHub token
+    stage: clone
+    image: codefresh/cli
+    commands:
+    - cf_export GITHUB_TOKEN=$(codefresh get context github --decrypt -o yaml | yq -r .spec.data.auth.password)
+
+  main_clone:
+    title: Clone main repository
+    type: git-clone
+    stage: clone
+    git: github
+    repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+    revision: ${{CF_REVISION}}
+
+  test:
+    title: Run unit tests
+    stage: test
+    image: hseeberger/scala-sbt:8u181_2.12.8_1.2.8
+    working_directory: ${{main_clone}}
+    commands:
+    - sbt -ivy /codefresh/volume/.ivy2 test
+
+  build_jar:
+    title: Build 
+    stage: build
+    image: hseeberger/scala-sbt:8u181_2.12.8_1.2.8
+    working_directory: ${{main_clone}}
+    commands:
+    - rm -f target/scala-2.11/*.jar
+    - sbt -ivy /codefresh/volume/.ivy2 assembly
+
+  upload_jar:
+    title: Upload release JAR
+    stage: release
+    image: guangie88/releaser:alpine_upx-3_ghr-0.12
+    working_directory: ${{main_clone}}
+    commands:
+    - |-
+      if [ -z "${CF_RELEASE_TAG}" ]; then
+        TAG_NAME=experimental
+      else
+        TAG_NAME=${CF_RELEASE_TAG}
+      fi
+    - |-
+      ghr -t ${{GITHUB_TOKEN}} -u ${{CF_REPO_OWNER}} -r ${{CF_REPO_NAME}} \
+          -c ${{CF_REVISION}} -replace ${TAG_NAME} target/scala-2.11/zeppelin-jar-loader-*.jar
