@@ -1,8 +1,7 @@
 package zepjarloader.github
 
 object Loader {
-  import java.io._
-  import java.nio.file._
+  import java.nio.file.{Files, Paths, StandardCopyOption}
   import org.apache.http.client.methods.HttpGet
   import org.apache.http.impl.client.DefaultHttpClient
   import org.apache.http.util.EntityUtils
@@ -13,15 +12,24 @@ object Loader {
     z: SparkDependencyContext,
     repo: String,
     tag: String,
-    assetName: Option[String],
+    assetName: String,
     token: Option[String],
-    outputFile: String,
+    outputFileOrDir: String,
     readCacheFirst: Boolean = true) = {
 
-    // Check for "cache" first
-    val checkFile = new File(outputFile)
+    // Form the actual file path
+    val outputFile =
+      if (Files.isRegularFile(Paths.get(outputFileOrDir))) {
+        outputFileOrDir
+      } else if (Files.isDirectory(Paths.get(outputFileOrDir))) {
+        Paths.get(outputFileOrDir, assetName).toString()
+      } else {
+        throw new Exception(
+          f"Given output file/dir '${outputFileOrDir}' is not a valid file path or existing directory")
+      }
 
-    if (!readCacheFirst || !checkFile.exists()) {
+    // Check for "cache" first
+    if (!readCacheFirst || !Files.exists(Paths.get(outputFile))) {
       val client = new DefaultHttpClient
 
       val releasesRaw = getReleases(client, repo, tag, token)
@@ -85,6 +93,7 @@ object Loader {
 
     val entity =
       getReq(client, url, None, Map("Accept" -> "application/octet-stream"))
+
     entity.getContent()
   }
 
@@ -98,24 +107,14 @@ object Loader {
     })
   }
 
-  private def getAssetId(raw: String, assetName: Option[String]): String = {
+  private def getAssetId(raw: String, assetName: String): String = {
     val json: Option[Any] = JSON.parseFull(raw)
     val m = json.get.asInstanceOf[Map[String, Any]]
     val assets = m.get("assets").get.asInstanceOf[List[Any]]
 
-    if (assets.length > 1 && assetName.isEmpty) {
-      throw new Exception(
-        f"Asset count is ${assets.length}, unable to determine which asset to use. Please specify `assetName`")
-    }
-
-    val asset = assetName match {
-      case Some(assetName) =>
-        findAsset(assets, assetName) match {
-          case Some(asset) => asset
-          case _ =>
-            throw new Exception(f"Unable to find asset name '${assetName}'")
-        }
-      case _ => assets(0).asInstanceOf[Map[String, Any]]
+    val asset = findAsset(assets, assetName) match {
+      case Some(asset) => asset
+      case _ => throw new Exception(f"Unable to find asset name '${assetName}'")
     }
 
     // Need to convert to value without any decimal point
@@ -134,4 +133,7 @@ object Loader {
 }
 
 // Example usage:
-// loadJar(z, "checkstyle/checkstyle", "checkstyle-8.21", Some("checkstyle-8.21-all.jar"), None /* no token */, "./checkstyle-8.21-all.jar")
+// loadJar(
+//   z,
+//   "checkstyle/checkstyle", "checkstyle-8.21", "checkstyle-8.21-all.jar",
+//   None /* no token */, "./" /* save and load from current dir */)

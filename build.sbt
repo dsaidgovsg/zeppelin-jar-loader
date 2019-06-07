@@ -1,7 +1,7 @@
 val nameVal = "zeppelin-jar-loader"
 name := nameVal
 
-val versionVal = "v0.1.0"
+val versionVal = "v0.2.0"
 version := versionVal
 
 val scalaVersionVal = "2.11.12"
