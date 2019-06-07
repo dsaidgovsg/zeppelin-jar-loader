@@ -13,10 +13,19 @@ object Loader {
     z: SparkDependencyContext,
     repo: String,
     tag: String,
-    assetName: Option[String],
+    assetName: String,
     token: Option[String],
-    outputFile: String,
+    outputFileOrDir: String,
     readCacheFirst: Boolean = true) = {
+
+    // Form the actual file path
+    val fileType = getFileType(outputFileOrDir)
+
+    val outputFile = fileType match {
+      case FileType.File => outputFileOrDir
+      case FileType.Dir => Paths.get(outputFileOrDir, assetName)
+      _ => throw new Exception(f"Given output file/dir '${outputFileOrDir}' is not a valid file path or existing directory")
+    }
 
     // Check for "cache" first
     val checkFile = new File(outputFile)
@@ -33,6 +42,23 @@ object Loader {
     }
 
     z.load(outputFile)
+  }
+
+  private object FileType extends Enumeration {
+    type FileType = Value
+    val File, Dir, Invalid = Value
+  }
+
+  private def getFileType(fileOrDir: String): FileType = {
+    val f = new File(fileOrDir)
+
+    if (file.isFile()) {
+      FileType.File
+    } else if (file.isDirectory()) {
+      FileType.Dir
+    } else {
+      FileType.Invalid
+    }
   }
 
   private def getReq(
@@ -85,6 +111,7 @@ object Loader {
 
     val entity =
       getReq(client, url, None, Map("Accept" -> "application/octet-stream"))
+
     entity.getContent()
   }
 
@@ -98,7 +125,7 @@ object Loader {
     })
   }
 
-  private def getAssetId(raw: String, assetName: Option[String]): String = {
+  private def getAssetId(raw: String, assetName: String): String = {
     val json: Option[Any] = JSON.parseFull(raw)
     val m = json.get.asInstanceOf[Map[String, Any]]
     val assets = m.get("assets").get.asInstanceOf[List[Any]]
