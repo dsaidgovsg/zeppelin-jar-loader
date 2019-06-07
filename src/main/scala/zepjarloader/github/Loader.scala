@@ -1,8 +1,7 @@
 package zepjarloader.github
 
 object Loader {
-  import java.io._
-  import java.nio.file._
+  import java.nio.file.{Files, Paths, StandardCopyOption}
   import org.apache.http.client.methods.HttpGet
   import org.apache.http.impl.client.DefaultHttpClient
   import org.apache.http.util.EntityUtils
@@ -19,18 +18,18 @@ object Loader {
     readCacheFirst: Boolean = true) = {
 
     // Form the actual file path
-    val fileType = getFileType(outputFileOrDir)
-
-    val outputFile = fileType match {
-      case FileType.File => outputFileOrDir
-      case FileType.Dir => Paths.get(outputFileOrDir, assetName)
-      _ => throw new Exception(f"Given output file/dir '${outputFileOrDir}' is not a valid file path or existing directory")
-    }
+    val outputFile =
+      if (Files.isRegularFile(Paths.get(outputFileOrDir))) {
+        outputFileOrDir
+      } else if (Files.isDirectory(Paths.get(outputFileOrDir))) {
+        Paths.get(outputFileOrDir, assetName).toString()
+      } else {
+        throw new Exception(
+          f"Given output file/dir '${outputFileOrDir}' is not a valid file path or existing directory")
+      }
 
     // Check for "cache" first
-    val checkFile = new File(outputFile)
-
-    if (!readCacheFirst || !checkFile.exists()) {
+    if (!readCacheFirst || !Files.exists(Paths.get(outputFile))) {
       val client = new DefaultHttpClient
 
       val releasesRaw = getReleases(client, repo, tag, token)
@@ -42,23 +41,6 @@ object Loader {
     }
 
     z.load(outputFile)
-  }
-
-  private object FileType extends Enumeration {
-    type FileType = Value
-    val File, Dir, Invalid = Value
-  }
-
-  private def getFileType(fileOrDir: String): FileType = {
-    val f = new File(fileOrDir)
-
-    if (file.isFile()) {
-      FileType.File
-    } else if (file.isDirectory()) {
-      FileType.Dir
-    } else {
-      FileType.Invalid
-    }
   }
 
   private def getReq(
@@ -130,19 +112,9 @@ object Loader {
     val m = json.get.asInstanceOf[Map[String, Any]]
     val assets = m.get("assets").get.asInstanceOf[List[Any]]
 
-    if (assets.length > 1 && assetName.isEmpty) {
-      throw new Exception(
-        f"Asset count is ${assets.length}, unable to determine which asset to use. Please specify `assetName`")
-    }
-
-    val asset = assetName match {
-      case Some(assetName) =>
-        findAsset(assets, assetName) match {
-          case Some(asset) => asset
-          case _ =>
-            throw new Exception(f"Unable to find asset name '${assetName}'")
-        }
-      case _ => assets(0).asInstanceOf[Map[String, Any]]
+    val asset = findAsset(assets, assetName) match {
+      case Some(asset) => asset
+      case _ => throw new Exception(f"Unable to find asset name '${assetName}'")
     }
 
     // Need to convert to value without any decimal point
@@ -161,4 +133,7 @@ object Loader {
 }
 
 // Example usage:
-// loadJar(z, "checkstyle/checkstyle", "checkstyle-8.21", Some("checkstyle-8.21-all.jar"), None /* no token */, "./checkstyle-8.21-all.jar")
+// loadJar(
+//   z,
+//   "checkstyle/checkstyle", "checkstyle-8.21", "checkstyle-8.21-all.jar",
+//   None /* no token */, "./" /* save and load from current dir */)
