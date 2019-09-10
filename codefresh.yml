@@ -61,4 +61,4 @@ steps:
       fi
     - |-
       ghr -t ${{GITHUB_TOKEN}} -u ${{CF_REPO_OWNER}} -r ${{CF_REPO_NAME}} \
-          -c ${{CF_REVISION}} -replace ${TAG_NAME} target/scala-${SCALA_XY_VERSION}/zeppelin-jar-loader-*.jar
+          -c ${{CF_REVISION}} -replace ${TAG_NAME} target/scala-${SCALA_XY_VERSION}/zeppelin-jar-loader_*.jar
