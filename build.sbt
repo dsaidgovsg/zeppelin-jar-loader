@@ -1,10 +1,12 @@
 val nameVal = "zeppelin-jar-loader"
 name := nameVal
 
-val versionVal = "v0.2.0"
+val versionVal = "v0.2.1"
 version := versionVal
 
-val scalaVersionVal = "2.11.12"
+val scalaVersionVal = sys.env.get("SCALA_VERSION").getOrElse("2.11.12")
+
+unmanagedBase := baseDirectory.value / "libs"
 
 lazy val testScalafmt = taskKey[Unit]("testScalafmt")
 
@@ -14,7 +16,7 @@ lazy val commonSettings = Seq(
   resolvers += DefaultMavenRepository,
   libraryDependencies ++= Seq(
     // Common test dependencies
-    "org.apache.zeppelin" %% "zeppelin-spark" % "0.7.3",
+    "org.apache.zeppelin" % "spark-interpreter" % "0.8.1",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
   ),
   // Disable parallel test execution to avoid SparkSession conflicts
@@ -29,7 +31,7 @@ def assemblySettings = Seq(
       MergeStrategy.discard
     case x => MergeStrategy.first
   },
-  assemblyJarName in assembly := f"${nameVal}-${versionVal}.jar",
+  assemblyJarName in assembly := f"${nameVal}_${scalaVersionVal}-${versionVal}.jar",
 )
 
 lazy val root = (project in file(".")).settings(
