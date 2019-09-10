@@ -5,6 +5,7 @@ val versionVal = "v0.2.1"
 version := versionVal
 
 val scalaVersionVal = sys.env.get("SCALA_VERSION").getOrElse("2.11.12")
+val scalaXYVersionVal = scalaVersionVal.split(raw"\.").take(2).mkString(".")
 
 unmanagedBase := baseDirectory.value / "libs"
 
@@ -31,7 +32,7 @@ def assemblySettings = Seq(
       MergeStrategy.discard
     case x => MergeStrategy.first
   },
-  assemblyJarName in assembly := f"${nameVal}_${scalaVersionVal}-${versionVal}.jar",
+  assemblyJarName in assembly := f"${nameVal}_${scalaXYVersionVal}-${versionVal}.jar",
 )
 
 lazy val root = (project in file(".")).settings(
