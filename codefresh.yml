@@ -1,10 +1,12 @@
 version: '1.0'
 stages:
 - clone
+- misc
 - test
 - build
 - release
 
+# Requires SCALA_VERSION (x.y.z) to be specified
 steps:
   get_github_token:
     title: Get default GitHub token
@@ -21,10 +23,17 @@ steps:
     repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
     revision: ${{CF_REVISION}}
 
+  extract_xy_scala_version:
+    title: Extract Scala x.y version
+    stage: misc
+    image: alpine:3.10
+    commands:
+    - cf_export SCALA_XY_VERSION="$(echo ${SCALA_VERSION} | cut -d '.' -f1,2)"
+
   test:
     title: Run unit tests
     stage: test
-    image: hseeberger/scala-sbt:8u181_2.12.8_1.2.8
+    image: hseeberger/scala-sbt:8u212_1.2.8_2.12.9
     working_directory: ${{main_clone}}
     commands:
     - sbt -ivy /codefresh/volume/.ivy2 test
@@ -32,10 +41,10 @@ steps:
   build_jar:
     title: Build 
     stage: build
-    image: hseeberger/scala-sbt:8u181_2.12.8_1.2.8
+    image: hseeberger/scala-sbt:8u212_1.2.8_2.12.9
     working_directory: ${{main_clone}}
     commands:
-    - rm -f target/scala-2.11/*.jar
+    - rm -f target/scala-${SCALA_XY_VERSION}/*.jar
     - sbt -ivy /codefresh/volume/.ivy2 assembly
 
   upload_jar:
@@ -52,4 +61,4 @@ steps:
       fi
     - |-
       ghr -t ${{GITHUB_TOKEN}} -u ${{CF_REPO_OWNER}} -r ${{CF_REPO_NAME}} \
-          -c ${{CF_REVISION}} -replace ${TAG_NAME} target/scala-2.11/zeppelin-jar-loader-*.jar
+          -c ${{CF_REVISION}} -replace ${TAG_NAME} target/scala-${SCALA_XY_VERSION}/zeppelin-jar-loader_*.jar
