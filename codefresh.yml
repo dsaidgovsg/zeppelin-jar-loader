@@ -1,6 +1,7 @@
 version: '1.0'
 stages:
 - clone
+- misc
 - test
 - build
 - release
@@ -24,6 +25,7 @@ steps:
 
   extract_xy_scala_version:
     title: Extract Scala x.y version
+    stage: misc
     image: alpine:3.10
     commands:
     - cf_export SCALA_XY_VERSION="$(echo ${SCALA_VERSION} | cut -d '.' -f1,2)"
