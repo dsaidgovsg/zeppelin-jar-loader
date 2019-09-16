@@ -11,13 +11,16 @@ unmanagedBase := baseDirectory.value / "libs"
 
 lazy val testScalafmt = taskKey[Unit]("testScalafmt")
 
+val zeppelinVersion = sys.env.get("ZEPPELIN_VERSION").getOrElse("0.8.1")
+lazy val sparkInterpreterRef = ProjectRef(uri("https://github.com/apache/zeppelin"), "spark-interpreter")
+lazy val sparkInterpreterLib = "org.apache.zeppelin" % "spark-interpreter" % zeppelinVersion
+
 lazy val commonSettings = Seq(
   version := versionVal,
   scalaVersion := scalaVersionVal,
   resolvers += DefaultMavenRepository,
   libraryDependencies ++= Seq(
     // Common test dependencies
-    "org.apache.zeppelin" % "spark-interpreter" % "0.8.1",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
   ),
   // Disable parallel test execution to avoid SparkSession conflicts
@@ -35,8 +38,10 @@ def assemblySettings = Seq(
   assemblyJarName in assembly := f"${nameVal}_${scalaXYVersionVal}-${versionVal}.jar",
 )
 
-lazy val root = (project in file(".")).settings(
-  commonSettings,
-  assemblySettings,
-  libraryDependencies ++= Seq()
-)
+lazy val root = (project in file("."))
+  .sourceDependency(sparkInterpreterRef, sparkInterpreterLib)
+  .settings(
+    commonSettings,
+    assemblySettings,
+    libraryDependencies ++= Seq()
+  )
