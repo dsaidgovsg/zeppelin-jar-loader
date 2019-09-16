@@ -12,7 +12,8 @@ unmanagedBase := baseDirectory.value / "libs"
 lazy val testScalafmt = taskKey[Unit]("testScalafmt")
 
 val zeppelinVersion = sys.env.get("ZEPPELIN_VERSION").getOrElse("0.8.1")
-lazy val sparkInterpreterRef = ProjectRef(uri("https://github.com/apache/zeppelin"), "spark-interpreter")
+// sbt <command> -Dsbt.sourcemode=true to activate source build mode
+lazy val sparkInterpreterRef = ProjectRef(uri("https://github.com/apache/zeppelin"), "zeppelin")
 lazy val sparkInterpreterLib = "org.apache.zeppelin" % "spark-interpreter" % zeppelinVersion
 
 lazy val commonSettings = Seq(
