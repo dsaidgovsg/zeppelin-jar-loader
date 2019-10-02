@@ -34,7 +34,7 @@ def assemblySettings = Seq(
       MergeStrategy.discard
     case x => MergeStrategy.first
   },
-  assemblyJarName in assembly := f"${nameVal}_${scalaXYVersion}-${versionVal}_zeppelin-${zeppelinVersion}.jar",
+  assemblyJarName in assembly := f"${nameVal}_${versionVal}_${scalaXYVersion}_zeppelin-${zeppelinVersion}.jar",
 )
 
 lazy val root = (project in file(".")).settings(
