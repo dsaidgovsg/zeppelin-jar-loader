@@ -4,10 +4,10 @@ name := nameVal
 val versionVal = "v0.2.1"
 version := versionVal
 
-val scalaVersion = sys.env.get("SCALA_VERSION").getOrElse("2.11.12")
-val scalaXYVersion = scalaVersion.split(raw"\.").take(2).mkString(".")
+val scalaVersionVal = sys.env.get("SCALA_VERSION").getOrElse("2.11.12")
+val scalaXYVersionVal = scalaVersionVal.split(raw"\.").take(2).mkString(".")
 
-val zeppelinVersion = sys.env.get("ZEPPELIN_VERSION").getOrElse("0.8.2")
+val zeppelinVersionVal = sys.env.get("ZEPPELIN_VERSION").getOrElse("0.8.2")
 
 unmanagedBase := baseDirectory.value / "libs"
 
@@ -15,11 +15,11 @@ lazy val testScalafmt = taskKey[Unit]("testScalafmt")
 
 lazy val commonSettings = Seq(
   version := versionVal,
-  scalaVersion := scalaVersion,
+  scalaVersion := scalaVersionVal,
   resolvers += DefaultMavenRepository,
   libraryDependencies ++= Seq(
     // Common test dependencies
-    "org.apache.zeppelin" % "spark-interpreter" % zeppelinVersion,
+    "org.apache.zeppelin" % "spark-interpreter" % zeppelinVersionVal,
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
   ),
   // Disable parallel test execution to avoid SparkSession conflicts
@@ -34,7 +34,7 @@ def assemblySettings = Seq(
       MergeStrategy.discard
     case x => MergeStrategy.first
   },
-  assemblyJarName in assembly := f"${nameVal}_${versionVal}_${scalaXYVersion}_zeppelin-${zeppelinVersion}.jar",
+  assemblyJarName in assembly := f"${nameVal}_${versionVal}_${scalaXYVersionVal}_zeppelin-${zeppelinVersionVal}.jar",
 )
 
 lazy val root = (project in file(".")).settings(
